@@ -2,5 +2,8 @@
   {
     "name": "RIN",
     "channelId": "UCxxxx"
+  },{
+    "name": "STREAMER TEST",
+    "channelId": "UCA_23dkEYToAc37hjSsCnXA"
   }
 ]
