@@ -6,6 +6,12 @@ const fs = require("fs");
 
 const streamers = JSON.parse(fs.readFileSync("./streamers.json"));
 
+const API_KEYS = process.env.YOUTUBE_API_KEYS.split(",");
+
+function getApiKey(index) {
+  return API_KEYS[index % API_KEYS.length];
+}
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
@@ -26,17 +32,19 @@ function createEmbed(type, streamer, video) {
   };
 }
 
-client.on("ready", async () => {
-  console.log("BOT RUNNING (SIMPLE MODE)");
+client.on("clientReady", async () => {
+  console.log("BOT RUNNING (MULTI API MODE)");
 
   const channel = await client.channels.fetch(process.env.CHANNEL_ID);
 
-  cron.schedule("* * * * *", async () => {
-    for (const streamer of streamers) {
+  cron.schedule("*/5 * * * *", async () => {
+    for (let i = 0; i < streamers.length; i++) {
+      const streamer = streamers[i];
+      const apiKey = getApiKey(i);
+
       try {
-        // LIVE
         const liveRes = await axios.get(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${streamer.channelId}&eventType=live&type=video&key=${process.env.YOUTUBE_API_KEY}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${streamer.channelId}&eventType=live&type=video&key=${apiKey}`
         );
 
         if (liveRes.data.items.length > 0) {
@@ -54,9 +62,8 @@ client.on("ready", async () => {
           liveStatus[streamer.channelId] = false;
         }
 
-        // UPLOAD
         const uploadRes = await axios.get(
-          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${streamer.channelId}&order=date&maxResults=1&type=video&key=${process.env.YOUTUBE_API_KEY}`
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${streamer.channelId}&order=date&maxResults=1&type=video&key=${apiKey}`
         );
 
         if (uploadRes.data.items.length > 0) {
